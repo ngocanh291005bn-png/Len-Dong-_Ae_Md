@@ -3,90 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game Avatar 2D & Chùa Online (No Image)</title>
+    <title>Game Avatar 2D - Làng Quê</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: Arial, sans-serif; user-select: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Roboto', sans-serif; user-select: none; }
         
-        /* BÊN NGOÀI */
+        /* ================= BẢN ĐỒ BÊN NGOÀI ================= */
         #game-map {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(to bottom, #87CEEB 60%, #8FBC8F 60%); 
+            /* Ảnh nền bản đồ làng quê 2D */
+            background-image: url('https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/National%20Park.png'); 
+            background-color: #8FBC8F;
+            background-size: cover;
+            background-position: center;
             overflow: hidden;
         }
+
+        /* Lớp phủ tối để làm nổi bật địa điểm */
+        #overlay-map {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+        }
+
+        /* Địa điểm (Có hiệu ứng nhấp nháy) */
+        .location { 
+            position: absolute; width: 80px; height: 80px; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            cursor: pointer; z-index: 10;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+        
+        .loc-icon { font-size: 45px; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.7)); }
+        .loc-name { background: rgba(0,0,0,0.8); color: #FFD700; border: 1px solid #FFD700; font-size: 12px; padding: 3px 10px; border-radius: 15px; margin-top: 5px; white-space: nowrap; box-shadow: 0 2px 5px black; }
+        
+        #loc-temple { top: 20%; left: 20%; }
+        #loc-shop { top: 30%; right: 20%; }
+        #loc-tree { bottom: 30%; left: 15%; }
+
+        /* NHÂN VẬT 2D */
         #player {
             position: absolute; bottom: 20%; left: 50%;
-            width: 60px; height: 80px; transform: translateX(-50%);
-            transition: left 2s ease-in-out, bottom 2s ease-in-out; z-index: 10;
+            width: 60px; height: 60px;
+            /* Ảnh nhân vật nhìn từ trên xuống */
+            background-image: url('https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Person%20Walking.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            transform: translateX(-50%);
+            transition: left 2s ease-in-out, bottom 2s ease-in-out;
+            z-index: 20;
+            filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5));
         }
-        .head { width: 40px; height: 40px; background-color: #FFE4B5; border-radius: 50%; position: absolute; top: 0; left: 10px; border: 3px solid #333; box-sizing: border-box; z-index: 2; }
-        .hair { width: 44px; height: 20px; background-color: #111; border-radius: 20px 20px 0 0; position: absolute; top: -5px; left: 8px; z-index: 3; }
-        .body { width: 40px; height: 35px; background-color: #FFD700; border-radius: 10px 10px 15px 15px; position: absolute; top: 38px; left: 10px; border: 3px solid #333; box-sizing: border-box; z-index: 1; }
-        .shadow { width: 40px; height: 15px; background: rgba(0,0,0,0.3); border-radius: 50%; position: absolute; bottom: -10px; left: 10px; }
-        .walking .head, .walking .body { animation: bounce 0.3s infinite alternate; }
-        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
 
-        .location { position: absolute; width: 80px; height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
-        .loc-icon { font-size: 40px; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5)); }
-        .loc-name { background: rgba(0,0,0,0.6); color: white; font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-top: 5px;}
-        #loc-temple { top: 10%; left: 15%; }
-        #loc-shop { top: 15%; right: 15%; }
-        #loc-tree { bottom: 15%; left: 10%; }
+        /* Hiệu ứng nhấp nhô khi đi bộ */
+        .walking { animation: walk-bounce 0.4s infinite alternate; }
+        @keyframes walk-bounce { 0% { transform: translateX(-50%) translateY(0); } 100% { transform: translateX(-50%) translateY(-10px); } }
 
-        /* BÊN TRONG (CHÙA) - Bỏ ảnh nền, dùng màu gradient */
+        /* ================= GIAO DIỆN CHÙA ================= */
         #ui-temple {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, #b8860b 0%, #8b0000 100%);
+            background-image: url('https://images.unsplash.com/photo-1599117807708-8393c57b9853?q=80&w=1000&auto=format&fit=crop'); 
+            background-size: cover; background-position: center top;
             display: none; flex-direction: column; z-index: 100;
         }
-        #crowd-area { position: absolute; bottom: 15%; left: 0; width: 100%; display: flex; flex-direction: column-reverse; align-items: center; gap: 5px; z-index: 102; }
+        /* Lớp phủ gradient đỏ */
+        #ui-temple::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 30%, rgba(139, 0, 0, 0.9) 100%);
+            z-index: 1;
+        }
+
+        #crowd-area { position: absolute; bottom: 15%; left: 0; width: 100%; display: flex; flex-direction: column-reverse; align-items: center; gap: 5px; z-index: 10; }
         .row { display: flex; justify-content: center; gap: 15px; }
-        .person { position: relative; width: 60px; display: flex; flex-direction: column; align-items: center; }
+        .person { position: relative; width: 50px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Dùng emoji thay cho ảnh Avatar */
-        .avatar-box { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #FFD700; background-color: #fff; display: flex; justify-content: center; align-items: center; font-size: 20px; z-index: 12; box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .name-tag { background: rgba(0, 0, 0, 0.7); color: white; font-size: 9px; padding: 2px 5px; border-radius: 10px; margin-top: 2px; border: 1px solid #FFD700; z-index: 12; }
+        .avatar-box { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #FFD700; background-color: #fff; display: flex; justify-content: center; align-items: center; font-size: 18px; z-index: 12; box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); margin-bottom: -5px;}
+        .name-tag { background: rgba(0, 0, 0, 0.8); color: white; font-size: 8px; padding: 2px 6px; border-radius: 10px; margin-top: 2px; border: 1px solid #FFD700; z-index: 12; }
         
-        /* Dùng emoji chú tiểu ngồi thiền thay cho ảnh */
-        .monk-emoji { font-size: 45px; margin-top: -5px; z-index: 11; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5)); animation: breathing 2s infinite ease-in-out alternate; line-height: 1;}
+        .monk-emoji { font-size: 40px; margin-top: -5px; z-index: 11; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5)); animation: breathing 2s infinite ease-in-out alternate; line-height: 1;}
         @keyframes breathing { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
         
-        #controls-2d { position: absolute; bottom: 0; width: 100%; padding: 15px; display: flex; justify-content: center; gap: 10px; z-index: 103; background: rgba(0,0,0,0.6); box-sizing: border-box; }
-        button { padding: 12px 20px; border-radius: 30px; border: 2px solid #FFD700; background: rgba(139, 0, 0, 0.9); color: #FFD700; font-weight: bold; font-size: 14px; cursor: pointer; }
-        .btn-exit { position: absolute; top: 20px; right: 20px; background: #FF0000; border: none; z-index: 104; padding: 10px 15px; border-radius: 20px; color: white; font-weight: bold; cursor: pointer;}
+        /* Nút bấm */
+        #controls-2d { position: absolute; bottom: 0; width: 100%; padding: 15px; display: flex; justify-content: center; gap: 10px; z-index: 103; background: rgba(0,0,0,0.7); box-sizing: border-box; border-top: 2px solid #FFD700;}
+        button { padding: 12px 25px; border-radius: 25px; border: 2px solid #FFD700; background: linear-gradient(to bottom, #B22222, #8B0000); color: #FFD700; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.5); text-transform: uppercase;}
+        button:active { transform: scale(0.95); }
+        
+        .btn-exit { position: absolute; top: 20px; right: 20px; background: #FF0000; border: 2px solid white; z-index: 104; padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px black;}
     </style>
 </head>
 <body>
 
 <div id="game-map">
-    <div class="location" id="loc-temple" onclick="goTo('temple')"><div class="loc-icon">⛩️</div><div class="loc-name">Chùa</div></div>
-    <div class="location" id="loc-shop" onclick="goTo('shop')"><div class="loc-icon">🥤</div><div class="loc-name">Quán Nước</div></div>
-    <div class="location" id="loc-tree" onclick="goTo('tree')"><div class="loc-icon">🌳</div><div class="loc-name">Cây Đa</div></div>
-
-    <div id="player">
-        <div class="shadow"></div>
-        <div class="head"></div>
-        <div class="hair"></div>
-        <div class="body"></div>
+    <div id="overlay-map"></div>
+    
+    <div class="location" id="loc-temple" onclick="goTo('temple')">
+        <div class="loc-icon">⛩️</div><div class="loc-name">CHÙA LÀNG</div>
     </div>
+    <div class="location" id="loc-shop" onclick="goTo('shop')">
+        <div class="loc-icon">🥤</div><div class="loc-name">QUÁN NƯỚC</div>
+    </div>
+    <div class="location" id="loc-tree" onclick="goTo('tree')">
+        <div class="loc-icon">🌳</div><div class="loc-name">CÂY ĐA</div>
+    </div>
+
+    <div id="player"></div>
 </div>
 
 <div id="ui-temple">
-    <button class="btn-exit" onclick="exitTemple()">❌ Ra Ngoài</button>
+    <button class="btn-exit" onclick="exitTemple()">❌ RA NGOÀI</button>
     <div id="crowd-area"></div>
     <div id="controls-2d">
-        <button onclick="gõMõ()">🔔 Gõ Mõ</button>
-        <button onclick="layPhat()">🙏 Lạy Phật</button>
+        <button onclick="gõMõ()">🔔 GÕ MÕ</button>
+        <button onclick="layPhat()">🙏 LẠY PHẬT</button>
     </div>
 </div>
 
+<!-- Âm thanh lấy từ trang web khác (nếu không kêu, bạn cần up file mp3 lên Github như hướng dẫn) -->
 <audio id="soundMo" src="https://actions.google.com/sounds/v1/foley/wood_plank_falls.ogg" preload="auto"></audio>
 <audio id="soundChuong" src="https://actions.google.com/sounds/v1/alarms/bell_ring.ogg" preload="auto"></audio>
 
 <script>
     const player = document.getElementById('player');
+    
+    // Tọa độ các địa điểm (ước lượng theo nền)
     const locations = {
-        temple: { left: '15%', bottom: '65%' },
-        shop: { left: '85%', bottom: '70%' },
+        temple: { left: '20%', bottom: '70%' },
+        shop: { left: '80%', bottom: '60%' },
         tree: { left: '15%', bottom: '25%' }
     };
 
@@ -100,13 +143,15 @@
             if (locName === 'temple') {
                 enterTemple();
             } else if (locName === 'shop') {
-                alert("Giao diện Quán Nước sẽ mở ra ở đây!");
+                alert("Giao diện Quán Nước sẽ mở ra ở đây! (Sắp cập nhật)");
+            } else {
+                alert("Bạn đang đứng dưới gốc cây đa hóng mát!");
             }
-        }, 2000);
+        }, 2000); // 2 giây là thời gian nhân vật trượt tới nơi
     };
 
+    // --- TẠO 20 CHÚ TIỂU TRONG CHÙA ---
     const crowdArea = document.getElementById('crowd-area');
-    // Danh sách các icon khuôn mặt ngẫu nhiên
     const faceEmojis = ['👦', '👧', '👨', '👩', '🧑', '👱'];
 
     for (let r = 0; r < 4; r++) {
@@ -116,7 +161,6 @@
             const personDiv = document.createElement('div');
             personDiv.className = 'person';
             
-            // Tạo Avatar bằng Emoji (Không sợ lỗi mạng)
             const avatarBox = document.createElement('div');
             avatarBox.className = 'avatar-box';
             avatarBox.innerText = faceEmojis[Math.floor(Math.random() * faceEmojis.length)];
@@ -125,7 +169,6 @@
             nameTag.className = 'name-tag';
             nameTag.innerText = `Phật tử ${r*5 + c + 1}`;
 
-            // Dùng Emoji chú tiểu ngồi thiền
             const monkEmoji = document.createElement('div');
             monkEmoji.className = 'monk-emoji';
             monkEmoji.innerText = '🧘'; 
@@ -154,7 +197,7 @@
         const el = document.createElement('div');
         el.style.position = 'absolute'; el.style.left = '50%'; el.style.top = '50%';
         el.style.transform = 'translate(-50%, -50%)'; el.style.color = '#FFD700';
-        el.style.fontSize = '24px'; el.style.fontWeight = 'bold'; el.style.textShadow = '2px 2px 4px black';
+        el.style.fontSize = '28px'; el.style.fontWeight = 'bold'; el.style.textShadow = '2px 2px 4px black';
         el.style.pointerEvents = 'none'; el.style.transition = 'all 1.5s ease-out'; el.innerText = text;
         document.getElementById('ui-temple').appendChild(el);
         
@@ -165,7 +208,6 @@
     function gõMõ() {
         const audio = document.getElementById('soundMo');
         audio.currentTime = 0; 
-        // Bắt lỗi nếu file âm thanh bị chặn
         audio.play().catch(e => console.log("Mạng chặn âm thanh")); 
         createFloatingText("Cốc! 🔔");
     }
