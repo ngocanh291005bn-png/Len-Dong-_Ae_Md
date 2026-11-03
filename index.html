@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Game Avatar 2D & Chùa Online (No Image)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: Arial, sans-serif; user-select: none; }
+        
+        /* BÊN NGOÀI */
+        #game-map {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 60%, #8FBC8F 60%); 
+            overflow: hidden;
+        }
+        #player {
+            position: absolute; bottom: 20%; left: 50%;
+            width: 60px; height: 80px; transform: translateX(-50%);
+            transition: left 2s ease-in-out, bottom 2s ease-in-out; z-index: 10;
+        }
+        .head { width: 40px; height: 40px; background-color: #FFE4B5; border-radius: 50%; position: absolute; top: 0; left: 10px; border: 3px solid #333; box-sizing: border-box; z-index: 2; }
+        .hair { width: 44px; height: 20px; background-color: #111; border-radius: 20px 20px 0 0; position: absolute; top: -5px; left: 8px; z-index: 3; }
+        .body { width: 40px; height: 35px; background-color: #FFD700; border-radius: 10px 10px 15px 15px; position: absolute; top: 38px; left: 10px; border: 3px solid #333; box-sizing: border-box; z-index: 1; }
+        .shadow { width: 40px; height: 15px; background: rgba(0,0,0,0.3); border-radius: 50%; position: absolute; bottom: -10px; left: 10px; }
+        .walking .head, .walking .body { animation: bounce 0.3s infinite alternate; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+
+        .location { position: absolute; width: 80px; height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
+        .loc-icon { font-size: 40px; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5)); }
+        .loc-name { background: rgba(0,0,0,0.6); color: white; font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-top: 5px;}
+        #loc-temple { top: 10%; left: 15%; }
+        #loc-shop { top: 15%; right: 15%; }
+        #loc-tree { bottom: 15%; left: 10%; }
+
+        /* BÊN TRONG (CHÙA) - Bỏ ảnh nền, dùng màu gradient */
+        #ui-temple {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #b8860b 0%, #8b0000 100%);
+            display: none; flex-direction: column; z-index: 100;
+        }
+        #crowd-area { position: absolute; bottom: 15%; left: 0; width: 100%; display: flex; flex-direction: column-reverse; align-items: center; gap: 5px; z-index: 102; }
+        .row { display: flex; justify-content: center; gap: 15px; }
+        .person { position: relative; width: 60px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Dùng emoji thay cho ảnh Avatar */
+        .avatar-box { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #FFD700; background-color: #fff; display: flex; justify-content: center; align-items: center; font-size: 20px; z-index: 12; box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+        .name-tag { background: rgba(0, 0, 0, 0.7); color: white; font-size: 9px; padding: 2px 5px; border-radius: 10px; margin-top: 2px; border: 1px solid #FFD700; z-index: 12; }
+        
+        /* Dùng emoji chú tiểu ngồi thiền thay cho ảnh */
+        .monk-emoji { font-size: 45px; margin-top: -5px; z-index: 11; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5)); animation: breathing 2s infinite ease-in-out alternate; line-height: 1;}
+        @keyframes breathing { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        
+        #controls-2d { position: absolute; bottom: 0; width: 100%; padding: 15px; display: flex; justify-content: center; gap: 10px; z-index: 103; background: rgba(0,0,0,0.6); box-sizing: border-box; }
+        button { padding: 12px 20px; border-radius: 30px; border: 2px solid #FFD700; background: rgba(139, 0, 0, 0.9); color: #FFD700; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-exit { position: absolute; top: 20px; right: 20px; background: #FF0000; border: none; z-index: 104; padding: 10px 15px; border-radius: 20px; color: white; font-weight: bold; cursor: pointer;}
+    </style>
+</head>
+<body>
+
+<div id="game-map">
+    <div class="location" id="loc-temple" onclick="goTo('temple')"><div class="loc-icon">⛩️</div><div class="loc-name">Chùa</div></div>
+    <div class="location" id="loc-shop" onclick="goTo('shop')"><div class="loc-icon">🥤</div><div class="loc-name">Quán Nước</div></div>
+    <div class="location" id="loc-tree" onclick="goTo('tree')"><div class="loc-icon">🌳</div><div class="loc-name">Cây Đa</div></div>
+
+    <div id="player">
+        <div class="shadow"></div>
+        <div class="head"></div>
+        <div class="hair"></div>
+        <div class="body"></div>
+    </div>
+</div>
+
+<div id="ui-temple">
+    <button class="btn-exit" onclick="exitTemple()">❌ Ra Ngoài</button>
+    <div id="crowd-area"></div>
+    <div id="controls-2d">
+        <button onclick="gõMõ()">🔔 Gõ Mõ</button>
+        <button onclick="layPhat()">🙏 Lạy Phật</button>
+    </div>
+</div>
+
+<audio id="soundMo" src="https://actions.google.com/sounds/v1/foley/wood_plank_falls.ogg" preload="auto"></audio>
+<audio id="soundChuong" src="https://actions.google.com/sounds/v1/alarms/bell_ring.ogg" preload="auto"></audio>
+
+<script>
+    const player = document.getElementById('player');
+    const locations = {
+        temple: { left: '15%', bottom: '65%' },
+        shop: { left: '85%', bottom: '70%' },
+        tree: { left: '15%', bottom: '25%' }
+    };
+
+    window.goTo = function(locName) {
+        player.classList.add('walking');
+        player.style.left = locations[locName].left;
+        player.style.bottom = locations[locName].bottom;
+
+        setTimeout(() => {
+            player.classList.remove('walking');
+            if (locName === 'temple') {
+                enterTemple();
+            } else if (locName === 'shop') {
+                alert("Giao diện Quán Nước sẽ mở ra ở đây!");
+            }
+        }, 2000);
+    };
+
+    const crowdArea = document.getElementById('crowd-area');
+    // Danh sách các icon khuôn mặt ngẫu nhiên
+    const faceEmojis = ['👦', '👧', '👨', '👩', '🧑', '👱'];
+
+    for (let r = 0; r < 4; r++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+        for (let c = 0; c < 5; c++) {
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person';
+            
+            // Tạo Avatar bằng Emoji (Không sợ lỗi mạng)
+            const avatarBox = document.createElement('div');
+            avatarBox.className = 'avatar-box';
+            avatarBox.innerText = faceEmojis[Math.floor(Math.random() * faceEmojis.length)];
+            
+            const nameTag = document.createElement('div');
+            nameTag.className = 'name-tag';
+            nameTag.innerText = `Phật tử ${r*5 + c + 1}`;
+
+            // Dùng Emoji chú tiểu ngồi thiền
+            const monkEmoji = document.createElement('div');
+            monkEmoji.className = 'monk-emoji';
+            monkEmoji.innerText = '🧘'; 
+
+            personDiv.appendChild(avatarBox);
+            personDiv.appendChild(nameTag);
+            personDiv.appendChild(monkEmoji);
+            rowDiv.appendChild(personDiv);
+        }
+        crowdArea.appendChild(rowDiv);
+    }
+
+    window.enterTemple = function() {
+        document.getElementById('game-map').style.display = 'none';
+        document.getElementById('ui-temple').style.display = 'flex';
+    }
+
+    window.exitTemple = function() {
+        document.getElementById('ui-temple').style.display = 'none';
+        document.getElementById('game-map').style.display = 'block';
+        player.style.left = '50%';
+        player.style.bottom = '20%';
+    }
+
+    function createFloatingText(text) {
+        const el = document.createElement('div');
+        el.style.position = 'absolute'; el.style.left = '50%'; el.style.top = '50%';
+        el.style.transform = 'translate(-50%, -50%)'; el.style.color = '#FFD700';
+        el.style.fontSize = '24px'; el.style.fontWeight = 'bold'; el.style.textShadow = '2px 2px 4px black';
+        el.style.pointerEvents = 'none'; el.style.transition = 'all 1.5s ease-out'; el.innerText = text;
+        document.getElementById('ui-temple').appendChild(el);
+        
+        setTimeout(() => { el.style.top = '10%'; el.style.opacity = '0'; }, 50);
+        setTimeout(() => { el.remove(); }, 1500);
+    }
+
+    function gõMõ() {
+        const audio = document.getElementById('soundMo');
+        audio.currentTime = 0; 
+        // Bắt lỗi nếu file âm thanh bị chặn
+        audio.play().catch(e => console.log("Mạng chặn âm thanh")); 
+        createFloatingText("Cốc! 🔔");
+    }
+
+    function layPhat() {
+        const audio = document.getElementById('soundChuong');
+        audio.currentTime = 0; 
+        audio.play().catch(e => console.log("Mạng chặn âm thanh")); 
+        createFloatingText("Nam mô A Di Đà Phật 🙏");
+    }
+</script>
+</body>
+</html>
